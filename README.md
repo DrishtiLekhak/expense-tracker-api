@@ -5,16 +5,24 @@ A small Django REST Framework backend for tracking personal spending
 
 ## Your Task (read this first)
 
-You will work with this codebase in three stages:
+You will work with this codebase in four stages:
 
 1. **Fix 5 bugs.** The code contains **5 intentional bugs**. Find and fix them
    all. Every hint you need is in the codebase or in this file.
 2. **Add Authentication (required).** Scope expenses and categories to the
    logged-in user and protect the endpoints.
-3. **Add 2 optional features** of your choice (list below).
+3. **Build 2 integration features (required):**
+   [Currency conversion](#feature-1--currency-conversion) and
+   [Budget threshold bot alerts](#feature-2--budget-threshold-bot-alerts).
+   Both are specified in detail below, with example requests/responses — these
+   are the hard part.
+4. **Add 2 optional features** of your choice (list below).
+
+Config placeholders for stage 3 are already in `.env.example` — copy them into
+your `.env`.
 
 Full rules, branch naming, and submission details are in
-[`requirements`](#full-requirements) at the bottom. Read that **before** writing
+[requirements](#full-requirements) at the bottom. Read that **before** writing
 code — workflow is graded.
 
 ## What you've been given
@@ -83,14 +91,117 @@ Python 3 · Django 5 · Django REST Framework · SQLite · python-dotenv
   fix(api): correct serializer field mapping
   ```
 
-### Features
+### Required features
 
-**Required:** Authentication — expenses and categories owned by and scoped to
-the authenticated user; endpoints protected (token/session auth + login).
+**Authentication** — expenses and categories owned by and scoped to the
+authenticated user; endpoints protected (token/session auth + login).
 
-**Optional (pick any 2):** Monthly budget limits per category · Recurring
-expenses · CSV export · Analytics dashboard · Expense search/filtering ·
-Monthly spending summaries · Favorite categories.
+Plus the two integration features below.
+
+#### Feature 1 — Currency conversion
+
+Let expenses be recorded in different currencies and reported in one base
+currency, using a third-party exchange-rate API.
+
+- Add a `currency` field to expenses (ISO code, e.g. `EUR`); `amount` stays in
+  that currency.
+- Reporting endpoints (e.g. `summary`) convert each amount to `BASE_CURRENCY`
+  (see `.env.example`) using rates from an exchange-rate API.
+- Free providers needing no key: `exchangerate.host`, `open.er-api.com`.
+
+Example (illustrative — refine the exact shape as you see fit):
+
+```jsonc
+// POST /api/expenses/
+{
+  "title": "Hotel in Paris",
+  "amount": "120.00",
+  "currency": "EUR",
+  "category": 1,
+  "date": "2026-06-09"
+}
+
+// 201 Created
+{
+  "id": 7,
+  "title": "Hotel in Paris",
+  "amount": "120.00",
+  "currency": "EUR",
+  "category": 1,
+  "date": "2026-06-09"
+}
+```
+
+```jsonc
+// GET /api/expenses/summary/   (BASE_CURRENCY = USD)
+{
+  "base_currency": "USD",
+  "categories": [
+    {
+      "category": "Travel",
+      "total": "129.60",        // 120.00 EUR converted at 1.08
+      "rate": "1.08",
+      "as_of": "2026-06-10"
+    }
+  ]
+}
+```
+
+#### Feature 2 — Budget threshold bot alerts
+
+Send a chat-bot alert when a category's spending crosses a configured limit.
+
+- Add a per-category monthly budget limit.
+- When a created/updated expense pushes that category's month-to-date total over
+  its limit, send an alert via a bot (Telegram recommended — free token from
+  `@BotFather`; Discord/Slack also fine). Credentials come from `.env`
+  (`BOT_TOKEN`, `BOT_CHAT_ID`).
+
+Example (illustrative — refine the exact shape as you see fit):
+
+```jsonc
+// Set a monthly limit on a category
+// POST /api/categories/   (or PATCH an existing one)
+{
+  "name": "Dining",
+  "monthly_limit": "200.00"
+}
+```
+
+```jsonc
+// POST /api/expenses/  — this expense pushes Dining's month total to 215.00,
+// over its 200.00 limit, so an alert fires once.
+{
+  "title": "Dinner out",
+  "amount": "45.00",
+  "category": 3,
+  "date": "2026-06-09"
+}
+
+// 201 Created — API responds normally; the alert is sent off the request path.
+{
+  "id": 12,
+  "title": "Dinner out",
+  "amount": "45.00",
+  "category": 3,
+  "date": "2026-06-09"
+}
+```
+
+```text
+Bot message delivered to BOT_CHAT_ID:
+
+⚠️ Budget alert: "Dining" is over its monthly limit.
+Spent 215.00 / 200.00 USD for June 2026.
+```
+
+Include **screenshots of the delivered bot alert** (the message in your
+Telegram/Discord/Slack chat) in your README as proof it works.
+
+#### Optional (pick any 1)
+
+Recurring expenses · CSV export · Analytics dashboard · Expense
+search/filtering · Monthly spending summaries · Favorite categories.
 
 Each feature must be fully functional, follow existing API conventions, and
 include validation. You may also improve the Django Admin.
@@ -105,14 +216,17 @@ include validation. You may also improve the Django Admin.
 
 In your README, add two sections:
 
-- `## My Features` — for each feature (auth + your 2): overview, design
-  decisions, API changes, example request/response, assumptions, known limits.
+- `## My Features` — for each feature (auth, currency conversion, bot alerts,
+  and your optional one): overview, design decisions, API changes, example
+  request/response, assumptions, known limits. For bot alerts, include
+  **screenshots of the delivered alert**.
 - `## Bugs Found and Fixed` — for each bug: description, root cause, fix, and
   commit hash.
 
 ### Submission
 
-Submit: GitHub repo URL · updated Postman collection · updated README.
+Submit: GitHub repo URL · updated Postman collection · updated README
+(including bot-alert screenshots).
 
 ### Evaluation criteria
 
