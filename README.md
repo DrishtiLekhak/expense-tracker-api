@@ -16,7 +16,7 @@ You will work with this codebase in four stages:
    [Budget threshold bot alerts](#feature-2--budget-threshold-bot-alerts).
    Both are specified in detail below, with example requests/responses — these
    are the hard part.
-4. **Add 2 optional features** of your choice (list below).
+4. **Add 2 optional features** of your choice ([list below](#optional-pick-any-2)).
 
 Config placeholders for stage 3 are already in `.env.example` — copy them into
 your `.env`.
@@ -198,7 +198,7 @@ Spent 215.00 / 200.00 USD for June 2026.
 Include **screenshots of the delivered bot alert** (the message in your
 Telegram/Discord/Slack chat) in your README as proof it works.
 
-#### Optional (pick any 1)
+#### Optional (pick any 2)
 
 Recurring expenses · CSV export · Analytics dashboard · Expense
 search/filtering · Monthly spending summaries · Favorite categories.
