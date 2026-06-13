@@ -2,6 +2,9 @@ import os
 from pathlib import Path
 
 from dotenv import load_dotenv
+import os
+
+BASE_CURRENCY = os.getenv("BASE_CURRENCY", "USD")
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
