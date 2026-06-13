@@ -7,6 +7,8 @@ from .serializers import CategorySerializer, ExpenseSerializer
 from django.db.models import Sum
 from rest_framework.decorators import permission_classes
 from rest_framework.permissions import IsAuthenticated
+from django.conf import settings
+from .currency import convert
 
 
 @api_view(["GET", "POST"])
@@ -69,16 +71,49 @@ def expense_detail(request, pk):
     return Response(status=status.HTTP_204_NO_CONTENT)
 
 
+# @api_view(["GET"])
+# @permission_classes([IsAuthenticated])
+# def expense_summary(request):
+#     summary = (
+#     Expense.objects.filter(user=request.user)
+#     .values("category__name")
+#     .annotate(total=Sum("amount"))
+#     .order_by("category__name")
+# )
+#     return Response(list(summary))
+
+
 @api_view(["GET"])
 @permission_classes([IsAuthenticated])
 def expense_summary(request):
-    summary = (
-    Expense.objects.filter(user=request.user)
-    .values("category__name")
-    .annotate(total=Sum("amount"))
-    .order_by("category__name")
-)
-    return Response(list(summary))
+    user = request.user
+    expenses = Expense.objects.filter(user=user)
+
+    base_currency = settings.BASE_CURRENCY
+
+    result = {}
+
+    for exp in expenses:
+        category = exp.category.name
+
+        converted_amount = convert(
+            exp.amount,
+            exp.currency,
+            base_currency
+        )
+
+        result[category] = result.get(category, 0) + converted_amount
+
+    return Response({
+        "base_currency": base_currency,
+        "categories": [
+            {
+                "category": k,
+                "total": round(v, 2)
+            }
+            for k, v in result.items()
+        ]
+    })
 
 
 

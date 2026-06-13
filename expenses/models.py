@@ -24,6 +24,10 @@ class Expense(models.Model):
     )
     date = models.DateField()
     notes = models.TextField(blank=True)
+    currency = models.CharField(
+    max_length=3,
+    default="USD"
+)
 
     def __str__(self):
         return f"{self.title} ({self.amount})"
