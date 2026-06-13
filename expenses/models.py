@@ -5,6 +5,7 @@ from django.contrib.auth.models import User
 class Category(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     name = models.CharField(max_length=100)
+    monthly_limit = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
     description = models.CharField(max_length=255, blank=True)
 
     class Meta:
