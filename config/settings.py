@@ -1,21 +1,29 @@
 import os
 from pathlib import Path
-
 from dotenv import load_dotenv
-import os
 
-BASE_CURRENCY = os.getenv("BASE_CURRENCY", "USD")
-
+# -----------------------------
+# BASE DIRECTORY
+# -----------------------------
 BASE_DIR = Path(__file__).resolve().parent.parent
 
+# -----------------------------
+# LOAD .env FILE FIRST (IMPORTANT)
+# -----------------------------
 load_dotenv(BASE_DIR / ".env")
 
+# -----------------------------
+# CORE SETTINGS FROM ENV
+# -----------------------------
 SECRET_KEY = os.getenv("SECRET_KEY", "django-insecure-change-me")
-
 DEBUG = os.getenv("DEBUG", "True") == "True"
+BASE_CURRENCY = os.getenv("BASE_CURRENCY", "USD")
 
 ALLOWED_HOSTS = ["*"]
 
+# -----------------------------
+# INSTALLED APPS
+# -----------------------------
 INSTALLED_APPS = [
     "django.contrib.admin",
     "django.contrib.auth",
@@ -23,11 +31,16 @@ INSTALLED_APPS = [
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
+
     "rest_framework",
-    'rest_framework.authtoken',
+    "rest_framework.authtoken",
+
     "expenses",
 ]
 
+# -----------------------------
+# MIDDLEWARE
+# -----------------------------
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
@@ -40,6 +53,9 @@ MIDDLEWARE = [
 
 ROOT_URLCONF = "config.urls"
 
+# -----------------------------
+# TEMPLATES
+# -----------------------------
 TEMPLATES = [
     {
         "BACKEND": "django.template.backends.django.DjangoTemplates",
@@ -58,6 +74,9 @@ TEMPLATES = [
 
 WSGI_APPLICATION = "config.wsgi.application"
 
+# -----------------------------
+# DATABASE
+# -----------------------------
 DATABASES = {
     "default": {
         "ENGINE": "django.db.backends.sqlite3",
@@ -65,24 +84,37 @@ DATABASES = {
     }
 }
 
+# -----------------------------
+# VALIDATION
+# -----------------------------
 AUTH_PASSWORD_VALIDATORS = [
-    {
-        "NAME": "django.contrib.auth.password_validation.UserAttributeSimilarityValidator"
-    },
+    {"NAME": "django.contrib.auth.password_validation.UserAttributeSimilarityValidator"},
     {"NAME": "django.contrib.auth.password_validation.MinimumLengthValidator"},
     {"NAME": "django.contrib.auth.password_validation.CommonPasswordValidator"},
     {"NAME": "django.contrib.auth.password_validation.NumericPasswordValidator"},
 ]
 
+# -----------------------------
+# INTERNATIONALIZATION
+# -----------------------------
 LANGUAGE_CODE = "en-us"
 TIME_ZONE = "UTC"
 USE_I18N = True
 USE_TZ = True
 
+# -----------------------------
+# STATIC FILES
+# -----------------------------
 STATIC_URL = "static/"
 
+# -----------------------------
+# DEFAULT PRIMARY KEY
+# -----------------------------
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
+# -----------------------------
+# REST FRAMEWORK CONFIG
+# -----------------------------
 REST_FRAMEWORK = {
     "DEFAULT_RENDERER_CLASSES": [
         "rest_framework.renderers.JSONRenderer",

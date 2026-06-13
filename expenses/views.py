@@ -9,6 +9,9 @@ from rest_framework.decorators import permission_classes
 from rest_framework.permissions import IsAuthenticated
 from django.conf import settings
 from .currency import convert
+from datetime import date
+from django.db.models import Sum
+from .bot import send_budget_alert
 
 
 @api_view(["GET", "POST"])
@@ -36,19 +39,44 @@ def expense_list(request):
 
         start_date = request.query_params.get("start_date")
         end_date = request.query_params.get("end_date")
+
         if start_date:
-            expenses = expenses.filter(date__gt=start_date)
+            expenses = expenses.filter(date__gte=start_date)
         if end_date:
             expenses = expenses.filter(date__lte=end_date)
 
         serializer = ExpenseSerializer(expenses, many=True)
         return Response(serializer.data)
 
+    # ---------------- POST (CREATE EXPENSE) ----------------
     serializer = ExpenseSerializer(data=request.data)
     serializer.is_valid(raise_exception=True)
-    serializer.save(user=request.user)
-    return Response(serializer.data, status=status.HTTP_201_CREATED)
+    expense = serializer.save(user=request.user)
 
+    # ---- BUDGET ALERT LOGIC ----
+
+    category = expense.category
+    today = expense.date
+
+    month_start = today.replace(day=1)
+
+    month_total = Expense.objects.filter(
+        user=request.user,
+        category=category,
+        date__gte=month_start,
+        date__lte=today
+    ).aggregate(total=Sum("amount"))["total"] or 0
+
+    if category.monthly_limit and month_total > category.monthly_limit:
+        send_budget_alert(
+            category_name=category.name,
+            spent=str(month_total),
+            limit=str(category.monthly_limit),
+            month=today.strftime("%B %Y")
+        )
+
+    return Response(serializer.data, status=201)
+   
 @api_view(["GET", "PUT", "DELETE"])
 @permission_classes([IsAuthenticated])
 def expense_detail(request, pk):
@@ -57,19 +85,44 @@ def expense_detail(request, pk):
     except Expense.DoesNotExist:
         return Response(status=status.HTTP_404_NOT_FOUND)
 
+    # ---------------- GET ----------------
     if request.method == "GET":
         serializer = ExpenseSerializer(expense)
         return Response(serializer.data)
 
+    # ---------------- PUT (UPDATE) ----------------
     if request.method == "PUT":
         serializer = ExpenseSerializer(expense, data=request.data)
         serializer.is_valid(raise_exception=True)
-        serializer.save(user=request.user)
+        expense = serializer.save(user=request.user)
+
+        from django.db.models import Sum
+        from .bot import send_budget_alert
+
+        category = expense.category
+        today = expense.date
+        month_start = today.replace(day=1)
+
+        month_total = Expense.objects.filter(
+            user=request.user,
+            category=category,
+            date__gte=month_start,
+            date__lte=today
+        ).aggregate(total=Sum("amount"))["total"] or 0
+
+        if category.monthly_limit and month_total > category.monthly_limit:
+            send_budget_alert(
+                category_name=category.name,
+                spent=str(month_total),
+                limit=str(category.monthly_limit),
+                month=today.strftime("%B %Y")
+            )
+
         return Response(serializer.data)
 
+    # ---------------- DELETE ----------------
     expense.delete()
     return Response(status=status.HTTP_204_NO_CONTENT)
-
 
 # @api_view(["GET"])
 # @permission_classes([IsAuthenticated])
