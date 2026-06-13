@@ -44,13 +44,8 @@ def expense_list(request):
 
     serializer = ExpenseSerializer(data=request.data)
     serializer.is_valid(raise_exception=True)
-<<<<<<< HEAD
-    serializer.save()
-=======
     serializer.save(user=request.user)
->>>>>>> feature/authentication-final
     return Response(serializer.data, status=status.HTTP_201_CREATED)
-
 
 @api_view(["GET", "PUT", "DELETE"])
 @permission_classes([IsAuthenticated])
